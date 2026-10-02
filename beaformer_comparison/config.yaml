@@ -1,0 +1,172 @@
+deterministic: true
+seed: 1234
+checkpoint_save_interval: 10
+
+mode: "test" # train, test 
+pretrained_fpath: null #  # Path to the entire network weight, default = "{outputs_dir}/best_model.pth"
+pretrained_backbone_fpath: null
+outputs_dir: /mnt/folder_3/shy/beaformer_comparison/outputs/btmri/H2Former/run3 # Output file directory, default = "./outputs/{dataset}/{model}/run{i}"
+CUDA_VISIBLE_DEVICES: "0"
+dataset: "btmri"
+model: "H2Former"
+
+# MobileUViT_L, H2Former, RollingUnet_L, U_Net, UCTransNet, U_KAN
+# "/mnt/folder_3/shy/backbone/resnet34-b627a593.pth" # UTANet, CFFormer[0]
+# "/mnt/folder_3/shy/backbone/vmamba_tiny_e292.pth" # Swin_umamba
+# "/mnt/folder_3/shy/backbone/pvt_v2_b2.pth" # PVT_EMCAD
+# "/mnt/folder_3/shy/backbone/mit_b1.pth" # MISSFormer
+# "/mnt/folder_3/shy/backbone/swin_tiny_patch4_window7_224.pth" # SwinUnet
+# "/mnt/folder_3/shy/backbone/res2net50_v1b_26w_4s-3cf99910.pth" # PraNet, UACANet_L
+# "/mnt/folder_3/shy/backbone/swin_v2_s-637d8ceb.pth" # CFFormer[1]
+# "/mnt/folder_3/shy/backbone/imagenet21k_R50+ViT-B_16.npz" # TransUNet
+
+polypdb_wli:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/PolypDB-WLI_224x224"
+  num_classes: 1
+
+bkai:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/BKAI_224x224"
+  num_classes: 1
+
+kvasirseg:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/KvasirSEG_224x224"
+  num_classes: 1
+
+busi:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/BUSI_224x224"
+  num_classes: 1
+
+busbra:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/BUSBRA_224x224"
+  num_classes: 1
+
+bus_uc:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/BUS_UC_224x224"
+  num_classes: 1
+
+brisc2025:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/BRISC2025_224x224"
+  num_classes: 1
+
+isic2017:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/ISIC2017_224x224"
+  num_classes: 1
+
+isic2018:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/ISIC2018_224x224"
+  num_classes: 1
+
+chaos:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 5
+  max_epochs: 150
+  batch_size: 32
+  k_folds: 4
+
+  root: "/mnt/folder_3/shy/data/CHAOS_224x224"
+  num_classes: 1
+
+btmri:
+  base_lr: 0.0005
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/BTMRI_224x224"
+  num_classes: 1
+
+qata_cov19_v2:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/QaTa_COV19_v2_224x224"
+  num_classes: 1
+
+qata_cov19_v1:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/QaTa_COV19_v1_224x224"
+  num_classes: 1
+
+nusec:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/NuSeC_224x224"
+  num_classes: 1
+
+glas:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+
+  root: "/mnt/folder_3/shy/data/GlaS_224x224"
+  num_classes: 1

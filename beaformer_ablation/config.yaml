@@ -1,0 +1,179 @@
+deterministic: true
+seed: 1234
+checkpoint_save_interval: 10
+
+mode: "train" # train, test
+pretrained_backbone_fpath: null # "/mnt/folder_3/shy/backbone/pvt_v2_b2.pth"
+pretrained_fpath: null # /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0001_no_dist_weight/model_state.pth
+outputs_dir: /mnt/folder_3/shy/beaformer_ablation/outputs/glas/no_bndsup
+CUDA_VISIBLE_DEVICES: "0"
+dataset: "glas"
+
+# /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0005_no_dist_weight_no_imagenet1k/model_state.pth
+# /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0001_no_dist_weight/model_state.pth
+
+polypdb_wli:
+  base_lr: 0.0005
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 0
+
+  root: "/mnt/folder_3/shy/data/PolypDB-WLI_224x224"
+  num_classes: 1
+
+bkai:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/BKAI_224x224"
+  num_classes: 1
+
+kvasirseg:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/KvasirSEG_224x224"
+  num_classes: 1
+
+busi:
+  base_lr: 0.0005
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 0
+
+  root: "/mnt/folder_3/shy/data/BUSI_224x224"
+  num_classes: 1
+
+busbra:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/BUSBRA_224x224"
+  num_classes: 1
+
+bus_uc:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/BUS_UC_224x224"
+  num_classes: 1
+
+brisc2025:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/BRISC2025_224x224"
+  num_classes: 1
+
+isic2017:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/ISIC2017_224x224"
+  num_classes: 1
+
+isic2018:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/ISIC2018_224x224"
+  num_classes: 1
+
+chaos:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 5
+  max_epochs: 150
+  batch_size: 32
+  k_folds: 4
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/CHAOS_224x224"
+  num_classes: 1
+
+qata_cov19_v2:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+
+  root: "/mnt/folder_3/shy/data/QaTa_COV19_v2_224x224"
+  num_classes: 1
+
+qata_cov19_v1:
+  base_lr: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 1.0
+  
+  root: "/mnt/folder_3/shy/data/QaTa_COV19_v1_224x224"
+  num_classes: 1
+  
+btmri:
+  base_lr: 0.0005
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 0
+
+  root: "/mnt/folder_3/shy/data/BTMRI_224x224"
+  num_classes: 1
+
+nusec:
+  base_lr: 0.0005
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 0
+
+  root: "/mnt/folder_3/shy/data/NuSeC_224x224"
+  num_classes: 1
+
+glas:
+  base_lr: 0.0005
+  weight_decay: 0.01
+  warmup_epochs: 15
+  max_epochs: 300
+  batch_size: 32
+  bnd_weight: 0
+  
+  root: "/mnt/folder_3/shy/data/GlaS_224x224"
+  num_classes: 1

@@ -1,0 +1,21 @@
+deterministic: true
+seed: 1234
+checkpoint_save_interval: 10
+
+pretrained_backbone_fpath: null # "/mnt/folder_3/shy/backbone/pvt_v2_b2.pth"
+outputs_dir: /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0005_no_dist_weight_no_imagenet1k
+CUDA_VISIBLE_DEVICES: "2"
+dataset: "cod27k"
+
+cod27k:
+  base_lr: 0.0005
+  freeze: False
+  weight_decay: 0.01
+  warmup_epochs: 15  # 5
+  max_epochs: 300 # 100
+  batch_size: 100
+  bnd_weight: 1.0
+  use_dist_weight: False
+
+  root: "/mnt/folder_3/shy/data/COD27K_224x224"
+  num_classes: 1
