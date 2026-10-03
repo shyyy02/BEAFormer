@@ -53,7 +53,7 @@ class RoutingIntervention:
             return torch.full_like(g, {"All-Eb": 1.0, "All-En": 0.0, "Fixed-0.5": 0.5}[self.mode])
         return route
 
-    def predict(self, model, image, mode):
+    def predict(self, model, image, mode, probabilities=False):
         if mode not in MODES:
             raise ValueError(f"Unknown intervention: {mode}")
         if model.training:
@@ -66,6 +66,8 @@ class RoutingIntervention:
             logits = result[0] if isinstance(result, (tuple, list)) else result
             if logits.ndim != 4 or logits.shape[1] != 1 or not torch.isfinite(logits).all():
                 raise ValueError("Expected finite binary logits [B,1,H,W]")
+            if probabilities:
+                return logits[:, 0].float().sigmoid().cpu()
             return (logits[:, 0] > 0).long().cpu()
         finally:
             self.mode = "Normal"
