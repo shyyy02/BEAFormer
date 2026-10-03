@@ -143,7 +143,7 @@ def main():
     parser.add_argument("--num-classes", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--block", default="decoder.stages.2.2", help="Same module path in both models; e.g. encoder.block1.0")
-    parser.add_argument("--gpu", type=int, default=0, help="GPU index among visible CUDA devices (default: 0)")
+    parser.add_argument("--gpu", type=int, default=3, help="GPU index among visible CUDA devices (default: 0)")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--visual-indices", type=int, nargs="+", default=[0, 1, 2, 3], help="Dataset indices, chosen before inspecting results")
     args = parser.parse_args()
