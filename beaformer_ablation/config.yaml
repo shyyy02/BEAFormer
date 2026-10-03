@@ -7,7 +7,7 @@ pretrained_backbone_fpath: null # "/mnt/folder_3/shy/backbone/pvt_v2_b2.pth"
 pretrained_fpath: null # /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0001_no_dist_weight/model_state.pth
 outputs_dir: /mnt/folder_3/shy/beaformer_ablation/outputs/glas/no_bndsup
 CUDA_VISIBLE_DEVICES: "0"
-dataset: "glas"
+dataset: "polypdb_wli"
 
 # /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0005_no_dist_weight_no_imagenet1k/model_state.pth
 # /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0001_no_dist_weight/model_state.pth
