@@ -6,20 +6,21 @@
 
 Command-line settings only. All-En forces g=0 at every BEA block; Reverse
 replaces g with 1-g at every block. P denotes sigmoid foreground probability.
-DeltaError(mode) = abs(P_mode-Y) - abs(P_Normal-Y). Positive values indicate
-increased error; negative values indicate improvement. No clipping to positive
+A_Normal(mode) = abs(P_mode-Y) - abs(P_Normal-Y). Positive values mean Normal
+is better; negative values mean the intervention is better. No clipping to positive
 values or per-image color normalization is applied. Regions are disjoint:
 Boundary=get_bnd_label(Y), Foreground Interior=(Y=1)&~Boundary,
 Background=(Y=0)&~Boundary. The boundary includes both sides of the contour.
 Statistics include pixel-pooled and image-wise macro means over the full test
 set, with per-image results in CSV. Macro means exclude images where the
 corresponding region is empty and report valid/excluded image counts.
-Figures show Input | GT | Normal probability | Mode probability | DeltaError.
+Figures show Input | GT | Normal probability | Mode probability | Normal Advantage Map.
+Existing delta_error statistics denote the same A_Normal quantity.
 Candidates are selected separately for All-En and Reverse: require Dice_Normal
 - Dice_mode > 0, boundary_mean_delta_error > 0 and S_boundary > 0,
 then rank by S_boundary.
-S_boundary = boundary mean DeltaError - max(interior mean DeltaError,
-background mean DeltaError). Samples missing any region are not rankable.
+S_boundary = boundary mean A_Normal - max(interior mean A_Normal,
+background mean A_Normal). Samples missing any region are not rankable.
 Export the top 10%-20%
 of filtered, rankable candidates for manual inspection of structural clarity.
 Full-test-set statistics are not restricted to these selected examples.
@@ -84,14 +85,14 @@ def regional_counts(normal, prediction, label, boundary):
              "background": (label == 0) & ~boundary}
     error_normal = np.abs(normal.astype(np.float64) - label)
     error_mode = np.abs(prediction.astype(np.float64) - label)
-    delta = error_mode - error_normal
+    normal_advantage = error_mode - error_normal
     counts = {}
     for region, mask in masks.items():
         counts[f"{region}_pixels"] = int(mask.sum())
         counts[f"{region}_normal_error_sum"] = float(error_normal[mask].sum())
         counts[f"{region}_mode_error_sum"] = float(error_mode[mask].sum())
-        counts[f"{region}_delta_error_sum"] = float(delta[mask].sum())
-    return delta, counts
+        counts[f"{region}_delta_error_sum"] = float(normal_advantage[mask].sum())
+    return normal_advantage, counts
 
 
 def regional_summary(counts):
@@ -135,7 +136,7 @@ def dataset_boundary_scores(summary_rows, aggregation):
     return scores
 
 
-def plot_error(path, image, label, normal, prediction, delta, mode, dataset):
+def plot_normal_advantage(path, image, label, normal, prediction, normal_advantage, mode, dataset):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -148,12 +149,12 @@ def plot_error(path, image, label, normal, prediction, delta, mode, dataset):
     axes[0].imshow(rgb)
     for ax, values in zip(axes[1:4], (label, normal, prediction)):
         ax.imshow(values, cmap="gray", vmin=0, vmax=1)
-    heat = axes[4].imshow(delta, cmap="RdBu_r", vmin=-1, vmax=1)
+    heat = axes[4].imshow(normal_advantage, cmap="RdBu_r", vmin=-1, vmax=1)
     for ax, title in zip(axes, ("Input", "GT", "Normal (probability)",
-                                f"{mode} (probability)", f"Delta Error ({mode} - Normal)")):
+                                f"{mode} (probability)", f"Normal Advantage over {mode}")):
         ax.set_title(title)
         ax.axis("off")
-    fig.colorbar(heat, ax=axes[4], shrink=0.8, label="Blue: improved; red: increased error")
+    fig.colorbar(heat, ax=axes[4], shrink=0.8, label=f"Red: Normal better\nBlue: {mode} better")
     fig.savefig(path, dpi=250)
     plt.close(fig)
 
@@ -207,7 +208,7 @@ def main():
                 normal = intervention.predict(model, batch, "Normal", probabilities=True)[0].numpy()
                 for mode in MODES:
                     prediction = intervention.predict(model, batch, mode, probabilities=True)[0].numpy()
-                    delta, counts = regional_counts(normal, prediction, label, boundary)
+                    normal_advantage, counts = regional_counts(normal, prediction, label, boundary)
                     for key, value in counts.items():
                         totals[mode][key] = totals[mode].get(key, 0) + value
                     stats = regional_summary(counts)
@@ -217,7 +218,8 @@ def main():
                     if row["passes_filters"] and row["rankable"]:
                         key = mode.replace("-", "_")
                         np.savez_compressed(Path(cache.name) / f"{index}_{key}.npz", label=label,
-                                            boundary=boundary, P_Normal=normal, P_mode=prediction, delta_error=delta)
+                                            boundary=boundary, P_Normal=normal, P_mode=prediction,
+                                            normal_advantage=normal_advantage)
                 print(f"Evaluated {index + 1}/{len(dataset)}", flush=True)
         for mode in MODES:
             key = mode.replace("-", "_")
@@ -237,8 +239,8 @@ def main():
                 index = row["dataset_index"]
                 stem = f"rank_{row['rank']:04d}_sample_{index:05d}"
                 with np.load(Path(cache.name) / f"{index}_{key}.npz") as arrays:
-                    plot_error(folder / f"{stem}.png", dataset[index]["image"], arrays["label"],
-                               arrays["P_Normal"], arrays["P_mode"], arrays["delta_error"], mode, dataset)
+                    plot_normal_advantage(folder / f"{stem}.png", dataset[index]["image"], arrays["label"],
+                                          arrays["P_Normal"], arrays["P_mode"], arrays["normal_advantage"], mode, dataset)
                     np.savez_compressed(folder / f"{stem}.npz", **dict(arrays))
     finally:
         intervention.close()
@@ -262,7 +264,9 @@ def main():
             row["S_B"] = mode_scores[row["mode"]]
     summary = {"settings": vars(args), "num_samples": len(dataset),
                "num_blocks": len(intervention.block_paths), "block_paths": intervention.block_paths,
-               "definition": "abs(P_mode-Y)-abs(P_Normal-Y); P is sigmoid foreground probability",
+               "definition": "A_Normal = abs(P_mode-Y)-abs(P_Normal-Y); P is sigmoid foreground probability; positive means Normal better, negative means intervention better",
+               "map_name": "Normal Advantage Map",
+               "statistics_naming": "delta_error and mean_error_increase fields measure the same A_Normal; retained for compatibility",
                "regions": {"boundary": "get_bnd_label(Y), both sides of contour",
                            "foreground_interior": "(Y==1) & ~boundary", "background": "(Y==0) & ~boundary"},
                "aggregation": "results: pixel-pooled; results_macro: equal-weight image-wise region means; both use all test images before visual filtering",
