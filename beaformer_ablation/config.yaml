@@ -6,6 +6,7 @@ mode: "train" # train, test
 pretrained_backbone_fpath: null # "/mnt/folder_3/shy/backbone/pvt_v2_b2.pth"
 pretrained_fpath: null # /mnt/folder_3/shy/beaformer_pretrain/outputs/cod27k/unfrozen_lr=0.0001_no_dist_weight/model_state.pth
 outputs_dir: /mnt/folder_3/shy/beaformer_ablation/outputs/glas/no_bndsup
+# outputs_dir: /home/shy/beaformer_ablation/outputs/bus_uc/run3
 CUDA_VISIBLE_DEVICES: "0"
 dataset: "polypdb_wli"
 
@@ -21,6 +22,7 @@ polypdb_wli:
   bnd_weight: 0
 
   root: "/mnt/folder_3/shy/data/PolypDB-WLI_224x224"
+  # root: "/home/shy/data/PolypDB-WLI_224x224"
   num_classes: 1
 
 bkai:
@@ -32,6 +34,7 @@ bkai:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/BKAI_224x224"
+  # root: "/home/shy/data/BKAI_224x224"
   num_classes: 1
 
 kvasirseg:
@@ -54,6 +57,7 @@ busi:
   bnd_weight: 0
 
   root: "/mnt/folder_3/shy/data/BUSI_224x224"
+  # root: "/home/shy/data/BUSI_224x224"
   num_classes: 1
 
 busbra:
@@ -65,6 +69,7 @@ busbra:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/BUSBRA_224x224"
+  # root: "/home/shy/data/BUSBRA_224x224"
   num_classes: 1
 
 bus_uc:
@@ -76,6 +81,7 @@ bus_uc:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/BUS_UC_224x224"
+  # root: "/home/shy/data/BUS_UC_224x224"
   num_classes: 1
 
 brisc2025:
@@ -87,6 +93,7 @@ brisc2025:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/BRISC2025_224x224"
+  # root: "/home/shy/data/BRISC2025_224x224"
   num_classes: 1
 
 isic2017:
@@ -98,6 +105,7 @@ isic2017:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/ISIC2017_224x224"
+  # root: "/home/shy/data/ISIC2017_224x224"
   num_classes: 1
 
 isic2018:
@@ -109,6 +117,7 @@ isic2018:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/ISIC2018_224x224"
+  # root: "/home/shy/data/ISIC2018_224x224"
   num_classes: 1
 
 chaos:
@@ -121,6 +130,7 @@ chaos:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/CHAOS_224x224"
+  # root: "/home/shy/data/CHAOS_224x224"
   num_classes: 1
 
 qata_cov19_v2:
@@ -132,6 +142,7 @@ qata_cov19_v2:
   bnd_weight: 1.0
 
   root: "/mnt/folder_3/shy/data/QaTa_COV19_v2_224x224"
+  # root: "/home/shy/data/QaTa_COV19_v2_224x224"
   num_classes: 1
 
 qata_cov19_v1:
@@ -143,6 +154,7 @@ qata_cov19_v1:
   bnd_weight: 1.0
   
   root: "/mnt/folder_3/shy/data/QaTa_COV19_v1_224x224"
+  # root: "/home/shy/data/QaTa_COV19_v1_224x224"
   num_classes: 1
   
 btmri:
@@ -154,6 +166,7 @@ btmri:
   bnd_weight: 0
 
   root: "/mnt/folder_3/shy/data/BTMRI_224x224"
+  # root: "/home/shy/data/BTMRI_224x224"
   num_classes: 1
 
 nusec:
@@ -165,6 +178,7 @@ nusec:
   bnd_weight: 0
 
   root: "/mnt/folder_3/shy/data/NuSeC_224x224"
+  # root: "/home/shy/data/NuSeC_224x224"
   num_classes: 1
 
 glas:
@@ -176,4 +190,5 @@ glas:
   bnd_weight: 0
   
   root: "/mnt/folder_3/shy/data/GlaS_224x224"
+  # root: "/home/shy/data/GlaS_224x224"
   num_classes: 1
