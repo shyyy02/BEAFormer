@@ -154,8 +154,12 @@ def plot_normal_advantage(path, image, label, normal, prediction, normal_advanta
                                 f"{mode} (probability)", f"Normal Advantage over {mode}")):
         ax.set_title(title)
         ax.axis("off")
-    colorbar = fig.colorbar(heat, ax=axes[4], shrink=0.8, ticks=[-1, 1])
-    colorbar.ax.set_yticklabels([f"{mode} better", "Normal better"])
+    colorbar = fig.colorbar(heat, ax=axes[4], shrink=0.8, ticks=[-1, 0, 1])
+    colorbar.ax.set_yticklabels(["-1", "0", "+1"])
+    colorbar.ax.text(0.5, -0.08, f"{mode} better", transform=colorbar.ax.transAxes,
+                     ha="center", va="top")
+    colorbar.ax.text(0.5, 1.08, "Normal better", transform=colorbar.ax.transAxes,
+                     ha="center", va="bottom")
     path = Path(path)
     fig.savefig(
         path.with_suffix(".png"),
