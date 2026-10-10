@@ -4,19 +4,22 @@
         --root /path/PolypDB-WLI_224x224 --checkpoint /path/best_model.pth \
         --gpu 0 --output-dir regional_error_results --top-fraction 0.2
 
-Command-line settings only. All-En forces g=0 at every BEA block; Reverse
-replaces g with 1-g at every block. P denotes sigmoid foreground probability.
+Command-line settings only. All-En forces g=0 at every BEA block.
+P denotes sigmoid foreground probability.
 A_Normal(mode) = abs(P_mode-Y) - abs(P_Normal-Y). Positive values mean Normal
-is better; negative values mean the intervention is better. No clipping to positive
-values or per-image color normalization is applied. Regions are disjoint:
+is better; negative values mean the intervention is better. Statistics and
+selection use this signed quantity. Visualization uses max(0, A_Normal), with
+a fixed [0,1] white-to-red scale and no colorbar. Regions are disjoint:
 Boundary=get_bnd_label(Y), Foreground Interior=(Y=1)&~Boundary,
 Background=(Y=0)&~Boundary. The boundary includes both sides of the contour.
 Statistics include pixel-pooled and image-wise macro means over the full test
 set, with per-image results in CSV. Macro means exclude images where the
 corresponding region is empty and report valid/excluded image counts.
-Figures show Input | GT | Normal probability | Mode probability | Normal Advantage Map.
+Export separate Input, GT, Normal probability, All-En probability and positive
+Normal Advantage images, without titles, axes or merged figures. PNGs preserve
+the source pixel dimensions with 600 DPI metadata; PDFs are also exported.
 Existing delta_error statistics denote the same A_Normal quantity.
-Candidates are selected separately for All-En and Reverse: require Dice_Normal
+Candidates are selected for All-En: require Dice_Normal
 - Dice_mode > 0, boundary_mean_delta_error > 0 and S_boundary > 0,
 then rank by S_boundary.
 S_boundary = boundary mean A_Normal - max(interior mean A_Normal,
@@ -30,7 +33,6 @@ import argparse
 import importlib
 import json
 import math
-import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -40,7 +42,7 @@ from expert_divergence import DATASETS, load_model
 from routing_intervention_eval import RoutingIntervention, write_csv
 
 
-MODES = ("All-En", "Reverse")
+MODES = ("All-En",)
 REGIONS = ("boundary", "foreground_interior", "background")
 
 
@@ -136,41 +138,33 @@ def dataset_boundary_scores(summary_rows, aggregation):
     return scores
 
 
-def plot_normal_advantage(path, image, label, normal, prediction, normal_advantage, mode, dataset):
+def save_sample_panels(folder, image, label, normal, prediction, normal_advantage, dataset):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from PIL import Image
     rgb = image.cpu().permute(1, 2, 0).numpy()
     if hasattr(dataset, "mean") and hasattr(dataset, "std"):
         rgb = np.clip(rgb * np.asarray(dataset.std) + np.asarray(dataset.mean), 0, 1)
     else:
         rgb = (rgb - rgb.min()) / max(float(np.ptp(rgb)), 1e-8)
-    fig, axes = plt.subplots(1, 5, figsize=(16, 3.4), constrained_layout=True)
-    axes[0].imshow(rgb)
-    for ax, values in zip(axes[1:4], (label, normal, prediction)):
-        ax.imshow(values, cmap="gray", vmin=0, vmax=1)
-    heat = axes[4].imshow(normal_advantage, cmap="RdBu_r", vmin=-1, vmax=1)
-    for ax, title in zip(axes, ("Input", "GT", "Normal (probability)",
-                                f"{mode} (probability)", f"Normal Advantage over {mode}")):
-        ax.set_title(title)
+    positive_advantage = np.clip(np.maximum(normal_advantage, 0), 0, 1)
+    heat_rgb = matplotlib.colormaps["Reds"](positive_advantage)[..., :3]
+    panels = {"input": rgb, "gt": label, "normal": normal,
+              "all_en": prediction, "normal_advantage": heat_rgb}
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    for name, values in panels.items():
+        pixels = np.rint(np.clip(values, 0, 1) * 255).astype(np.uint8)
+        Image.fromarray(pixels).save(folder / f"{name}.png", dpi=(600, 600))
+        h, w = pixels.shape[:2]
+        fig = plt.figure(figsize=(w / 100, h / 100))
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.imshow(pixels, cmap="gray" if pixels.ndim == 2 else None,
+                  vmin=0, vmax=255, interpolation="nearest")
         ax.axis("off")
-    colorbar = fig.colorbar(heat, ax=axes[4], shrink=0.8, ticks=[-1, 0, 1])
-    colorbar.ax.set_yticklabels(["-1", "0", "+1"])
-    colorbar.ax.text(0.5, -0.08, f"{mode} better", transform=colorbar.ax.transAxes,
-                     ha="center", va="top")
-    colorbar.ax.text(0.5, 1.08, "Normal better", transform=colorbar.ax.transAxes,
-                     ha="center", va="bottom")
-    path = Path(path)
-    fig.savefig(
-        path.with_suffix(".png"),
-        dpi=600,
-        bbox_inches="tight",
-    )
-    fig.savefig(
-        path.with_suffix(".pdf"),
-        bbox_inches="tight",
-    )
-    plt.close(fig)
+        fig.savefig(folder / f"{name}.pdf", dpi=600, bbox_inches="tight", pad_inches=0)
+        plt.close(fig)
 
 
 def main():
@@ -210,7 +204,6 @@ def main():
     totals = {mode: {} for mode in MODES}
     rows = []
     review_summary = {}
-    cache = tempfile.TemporaryDirectory(prefix="candidate_cache_", dir=output)
     try:
         with torch.inference_mode():
             for index in range(len(dataset)):
@@ -229,11 +222,6 @@ def main():
                     row = {"dataset_index": index, "source": str(dataset.image_fpaths[index]),
                            "mode": mode, **stats, **selection_metrics(normal, prediction, label, stats)}
                     rows.append(row)
-                    if row["passes_filters"] and row["rankable"]:
-                        key = mode.replace("-", "_")
-                        np.savez_compressed(Path(cache.name) / f"{index}_{key}.npz", label=label,
-                                            boundary=boundary, P_Normal=normal, P_mode=prediction,
-                                            normal_advantage=normal_advantage)
                 print(f"Evaluated {index + 1}/{len(dataset)}", flush=True)
         for mode in MODES:
             key = mode.replace("-", "_")
@@ -252,13 +240,18 @@ def main():
             for row in selected:
                 index = row["dataset_index"]
                 stem = f"rank_{row['rank']:04d}_sample_{index:05d}"
-                with np.load(Path(cache.name) / f"{index}_{key}.npz") as arrays:
-                    plot_normal_advantage(folder / f"{stem}.png", dataset[index]["image"], arrays["label"],
-                                          arrays["P_Normal"], arrays["P_mode"], arrays["normal_advantage"], mode, dataset)
-                    np.savez_compressed(folder / f"{stem}.npz", **dict(arrays))
+                # Recompute only selected examples to avoid storing prediction arrays on disk.
+                sample = dataset[index]
+                image, label_tensor = sample["image"], sample["label"].cpu()
+                label = label_tensor.numpy()
+                batch = image.unsqueeze(0).to(device)
+                with torch.inference_mode():
+                    normal = intervention.predict(model, batch, "Normal", probabilities=True)[0].numpy()
+                    prediction = intervention.predict(model, batch, mode, probabilities=True)[0].numpy()
+                normal_advantage = np.abs(prediction.astype(np.float64) - label) - np.abs(normal.astype(np.float64) - label)
+                save_sample_panels(folder / stem, image, label, normal, prediction, normal_advantage, dataset)
     finally:
         intervention.close()
-        cache.cleanup()
 
     summary_rows = []
     for mode in MODES:
@@ -279,7 +272,9 @@ def main():
     summary = {"settings": vars(args), "num_samples": len(dataset),
                "num_blocks": len(intervention.block_paths), "block_paths": intervention.block_paths,
                "definition": "A_Normal = abs(P_mode-Y)-abs(P_Normal-Y); P is sigmoid foreground probability; positive means Normal better, negative means intervention better",
-               "map_name": "Normal Advantage Map",
+               "map_name": "Positive Normal Advantage Map over All-En",
+               "visual_definition": "max(0, abs(P_All-En-Y)-abs(P_Normal-Y)); signed statistics and selection remain unchanged",
+               "visual_exports": "Five separate panels per selected sample, PNG (600 DPI metadata) and PDF; no NPZ, merged figure, axes, titles or colorbar",
                "statistics_naming": "delta_error and mean_error_increase fields measure the same A_Normal; retained for compatibility",
                "regions": {"boundary": "get_bnd_label(Y), both sides of contour",
                            "foreground_interior": "(Y==1) & ~boundary", "background": "(Y==0) & ~boundary"},
@@ -295,7 +290,7 @@ def main():
                                     "candidates": review_summary},
                "dataset_S_B_definition": "Dataset boundary mean delta error - max(dataset interior mean delta error, dataset background mean delta error); apply after region aggregation, not mean of per-image S_boundary; null if any region mean is unavailable",
                "dataset_boundary_scores": dataset_scores,
-               "heatmap_range": [-1, 1], "results": summary_rows, "results_macro": macro_rows}
+               "heatmap_range": [0, 1], "heatmap_colormap": "Reds", "results": summary_rows, "results_macro": macro_rows}
     write_csv(output / "per_sample.csv", rows)
     write_csv(output / "summary.csv", summary_rows)
     write_csv(output / "summary_macro.csv", macro_rows)
