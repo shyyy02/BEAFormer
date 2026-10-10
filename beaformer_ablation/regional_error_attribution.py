@@ -149,7 +149,10 @@ def save_sample_panels(folder, image, label, normal, prediction, normal_advantag
     else:
         rgb = (rgb - rgb.min()) / max(float(np.ptp(rgb)), 1e-8)
     positive_advantage = np.clip(np.maximum(normal_advantage, 0), 0, 1)
-    heat_rgb = matplotlib.colormaps["Reds"](positive_advantage)[..., :3]
+    reds = matplotlib.colormaps["Reds"]
+    white_reds = matplotlib.colors.LinearSegmentedColormap.from_list(
+        "white_reds", [(1.0, 1.0, 1.0), *reds(np.linspace(0, 1, 256))[1:, :3]])
+    heat_rgb = white_reds(positive_advantage)[..., :3]
     panels = {"input": rgb, "gt": label, "normal": normal,
               "all_en": prediction, "normal_advantage": heat_rgb}
     folder = Path(folder)
