@@ -18,7 +18,8 @@ Export the first --num-candidates for manual review; do not silently fall back.
 All-test scores and candidate rankings are saved separately from selected images.
 Each candidate exports eight standalone PNG/PDF panels: input, GT ROI overlay,
 and six prediction overlays. GT is green; predictions are translucent blue;
-every prediction panel has the same solid green GT contour. No merged figures.
+Prediction XOR GT (false positives and false negatives) is translucent red.
+Every prediction panel has the same solid green GT contour. No merged figures.
 PNG retains the preprocessed pixel size with 600 DPI metadata.
 """
 
@@ -41,6 +42,7 @@ DATASETS = {"polypdb_wli": "PolypDB_WLI", "busi": "BUSI", "glas": "GlaS", "btmri
 MODEL_NAMES = ("unet", "uctransnet", "swinunet", "pvtemcad", "pranet", "beaformer")
 GT_COLOR = np.array([46, 204, 113], dtype=np.float64)  # #2ECC71
 PRED_COLOR = np.array([59, 130, 246], dtype=np.float64)  # #3B82F6
+DIFFERENCE_COLOR = np.array([239, 68, 68], dtype=np.float64)  # #EF4444
 
 
 @contextmanager
@@ -170,9 +172,13 @@ def overlay(rgb, mask, color, alpha):
     return np.rint(result).astype(np.uint8)
 
 
-def prediction_overlay(rgb, prediction, label, alpha, boundary_width):
+def prediction_overlay(rgb, prediction, label, alpha, boundary_width, difference_alpha=0.5):
     import cv2
     result = overlay(rgb, prediction, PRED_COLOR, alpha)
+    difference = np.asarray(prediction, dtype=bool) ^ np.asarray(label, dtype=bool)
+    # Blend errors with the input directly so both FP and FN use identical red.
+    red_overlay = overlay(rgb, difference, DIFFERENCE_COLOR, difference_alpha)
+    result[difference] = red_overlay[difference]
     # RETR_LIST includes inner ROI contours (holes) as well as outer contours.
     contours, _ = cv2.findContours(label.astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
     cv2.drawContours(result, contours, -1, tuple(int(v) for v in GT_COLOR), thickness=boundary_width,
@@ -210,17 +216,20 @@ def main():
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--num-candidates", type=int, default=10)
-    parser.add_argument("--min-dice", type=float, default=0.85, help="Minimum Dice for every model")
+    parser.add_argument("--min-dice", type=float, default=0.80, help="Minimum Dice for every model")
     parser.add_argument("--min-ours-dice", type=float, default=0.90)
-    parser.add_argument("--max-dice-spread", type=float, default=0.05, help="Maximum max(Dice)-min(Dice) across all six models")
-    parser.add_argument("--max-nonboundary-error", type=float, default=0.01, help="Maximum nonboundary pixel error rate for every model")
+    parser.add_argument("--max-dice-spread", type=float, default=0.10, help="Maximum max(Dice)-min(Dice) across all six models")
+    parser.add_argument("--max-nonboundary-error", type=float, default=0.05, help="Maximum nonboundary pixel error rate for every model")
     parser.add_argument("--boundary-band-radius", type=int, default=2, help="GT boundary-band radius in pixels; separate from contour drawing width")
     parser.add_argument("--alpha", type=float, default=0.4, help="Prediction/GT fill opacity, identical across models")
+    parser.add_argument("--difference-alpha", type=float, default=0.5, help="Red prediction-XOR-GT fill opacity, identical across models")
     parser.add_argument("--boundary-width", type=int, default=1, help="GT contour width in pixels")
     parser.add_argument("--seed", type=int, default=1234)
     args = parser.parse_args()
     if not 0 < args.alpha < 1 or args.boundary_width < 1 or args.num_candidates < 1:
         parser.error("Require 0<alpha<1, boundary-width>=1 and num-candidates>=1")
+    if not 0 < args.difference_alpha < 1:
+        parser.error("--difference-alpha must be between 0 and 1 (exclusive)")
     if any(not 0 <= value <= 1 for value in (args.min_dice, args.min_ours_dice, args.max_dice_spread, args.max_nonboundary_error)):
         parser.error("Dice/error thresholds must be between 0 and 1")
     if args.boundary_band_radius < 1:
@@ -292,7 +301,8 @@ def main():
             for name in MODEL_NAMES:
                 with Image.open(cache / name / f"{index}.png") as image:
                     pred = np.asarray(image).astype(bool)
-                save_panel(folder / name, prediction_overlay(rgb, pred, label, args.alpha, args.boundary_width))
+                save_panel(folder / name, prediction_overlay(rgb, pred, label, args.alpha, args.boundary_width,
+                                                            args.difference_alpha))
         summary = {"settings": vars(args), "num_test_images": len(dataset), "eligible_candidates": len(ranked),
                    "exported_candidates": len(selected), "selected_indices": [row["dataset_index"] for row in selected],
                    "selection": "All model Dice >= min_dice; Ours Dice >= min_ours_dice and > every baseline; Dice spread <= max_dice_spread; every nonboundary error <= max_nonboundary_error; Ours boundary error < every baseline; nonempty ROI/boundary/nonboundary",
@@ -301,6 +311,8 @@ def main():
                    "regional_error_definition": "Mean of (binary prediction != GT) inside/outside the GT boundary band",
                    "test_mean_dice": {name: float(np.mean([r[f"{name}_dice"] for r in rows])) for name in MODEL_NAMES},
                    "threshold": "logits > 0 for all models", "gt_color": "#2ECC71", "prediction_color": "#3B82F6",
+                   "difference_color": "#EF4444", "difference_region": "prediction XOR GT (false positives + false negatives)",
+                   "overlay_order": "Blue prediction fill; red difference fill blended with input; solid green GT contour on top",
                    "export": "Separate PNG/PDF panels; PNG preserves preprocessed resolution with 600 DPI metadata"}
         with open(output / "summary.json", "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2, allow_nan=False)
