@@ -57,9 +57,9 @@ class BEAFormer(nn.Module):
 
             return p1, gs
 
-        # For qualitative analysis
-        g = F.interpolate(dec_gs[-1], size=(H, W), mode="bilinear")
-        return p1, g
+        # # For qualitative analysis
+        # g = F.interpolate(dec_gs[-1], size=(H, W), mode="bilinear")
+        # return p1, g
 
         return p1
 

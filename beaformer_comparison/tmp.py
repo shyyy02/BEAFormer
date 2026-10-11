@@ -3,7 +3,7 @@
 Install in your existing model environment: python -m pip install fvcore
 Run from repository root:
     python beaformer_comparison/tmp.py --gpu 0
-    python beaformer_comparison/tmp.py --models unet pmrnet beaformer --gpu 0
+    python beaformer_comparison/tmp.py --models unet swin_umamba beaformer --gpu 0
     python beaformer_comparison/tmp.py --models all
     python beaformer_comparison/tmp.py --models unet --device cpu
 
@@ -11,6 +11,9 @@ GMACs counts supported conv/linear/matrix contractions only.
 GFLOPs_fma1 counts all fvcore-supported operations, with one fused multiply-add
 counted as one operation. Do not divide this total by two to obtain MACs.
 Unsupported operators are flagged and saved. No checkpoint/config is required.
+Default: the 14 comparison models plus BEAFormer. --models all also includes
+other registered models. Swin_umamba requires the project's Mamba/CUDA dependencies;
+its selective-scan custom operator may be unsupported and must be reviewed.
 All operations actually executed by eval forward are included where supported,
 including auxiliary outputs computed by the original model implementation.
 """
@@ -34,6 +37,7 @@ MODEL_SPECS = {
     "unet": ("U_Net", "U_Net"),
     "uctransnet": ("UCTransNet", "UCTransNet"),
     "swinunet": ("SwinUnet", "swinunet"),
+    "swin_umamba": ("Swin_umamba", "swin_umamba"),
     "pvtemcad": ("PVT_EMCAD", "EMCADNet"),
     "pranet": ("PraNet", "PraNet"),
     "beaformer": ("BEAFormer", "BEAFormer"),
@@ -53,10 +57,14 @@ MODEL_SPECS = {
     "u_kan": ("U_KAN", "UKAN"),
     "missformer": ("MISSFormer", "MISSFormer"),
 }
-DEFAULT_MODELS = list(MODEL_SPECS)[:7]
+DEFAULT_MODELS = [
+    "unet", "pranet", "uacanet_l", "swinunet", "uctransnet", "missformer",
+    "h2former", "rollingunet_l", "swin_umamba", "pvtemcad", "u_kan",
+    "mobileuvit_l", "cfformer", "utanet", "beaformer",
+]
 PRETRAINED_ARGUMENT = {
     "swinunet", "pvtemcad", "pranet", "transunet", "cfformer",
-    "fcbformer", "uacanet_l", "utanet", "missformer",
+    "fcbformer", "uacanet_l", "utanet", "missformer", "swin_umamba",
 }
 MAC_OPERATORS = {"conv", "linear", "matmul", "bmm", "mm", "addmm", "einsum"}
 
